@@ -22,6 +22,8 @@ tqdm = "*"
 scikit-learn = "*"
 scikit-image = "*"
 seaborn = "*"
+pycocotools = "*"
+cython = "*"
 
 [requires]
 python_version = "3.6"
