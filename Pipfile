@@ -1,0 +1,27 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+ipython = "*"
+pytest = "*"
+
+[packages]
+opencv-python = "==3.2.0.6"
+jupyter = "*"
+matplotlib = "*"
+pandas = "*"
+torch = "*"
+torchvision = "*"
+numpy = "*" 
+pillow = "*"
+scipy = "*"
+nltk = "*"
+tqdm = "*"
+scikit-learn = "*"
+scikit-image = "*"
+seaborn = "*"
+
+[requires]
+python_version = "3.6"
