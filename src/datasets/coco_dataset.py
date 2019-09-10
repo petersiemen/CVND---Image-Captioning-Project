@@ -4,7 +4,7 @@ import torch
 import torch.utils.data as data
 import numpy as np
 import json
-from vocabulary import Vocabulary
+from .vocabulary import Vocabulary
 from pycocotools.coco import COCO
 from PIL import Image
 

@@ -1,6 +1,6 @@
 import os
 import torch.utils.data as data
-from datasets.coco_dataset import CoCoDataset
+from .datasets.coco_dataset import CoCoDataset
 
 
 def get_loader(transform,
