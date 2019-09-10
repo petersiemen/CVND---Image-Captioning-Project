@@ -7,6 +7,7 @@ import json
 from .vocabulary import Vocabulary
 from pycocotools.coco import COCO
 from PIL import Image
+from tqdm import tqdm
 
 
 class CoCoDataset(data.Dataset):
