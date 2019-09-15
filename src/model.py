@@ -38,7 +38,23 @@ class DecoderRNN(nn.Module):
         self.log_softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, features, captions):
-        pass
+        batch_size = features.size(0)
+        # pass input through embedding layer
+        embeds = self.embed(features)
+
+        # get RNN outputs
+        r_out, hidden = self.lstm(embeds, captions)
+        # shape output to be (batch_size*seq_length, hidden_dim)
+
+        # Stack up rnn output
+        r_out = r_out.contiguous().view(-1, self.hidden_dim)
+
+        # get final output
+        output = self.fc(r_out)
+        output = output.view(batch_size, -1, self.output_size)
+        out = output[:, -1]  # get last batch of labels
+        # return one batch of output word scores and the hidden state
+        return out, hidden
 
     def sample(self, inputs, states=None, max_len=20):
         " accepts pre-processed image tensor (inputs) and returns predicted sentence (list of tensor ids of length max_len) "

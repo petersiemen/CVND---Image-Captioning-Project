@@ -14,15 +14,15 @@ def test_coco_dataset():
     mode = "train"
     batch_size=5
     vocab_threshold = 5
-    vocab_file='./vocab.pkl'
+    vocab_file='../vocab.pkl'
     start_word="<start>"
     end_word="<end>"
     unk_word="<unk>"
-    vocab_from_file=False
+    vocab_from_file=True
     cocoapi_loc='/opt'
     img_folder = os.path.join(cocoapi_loc, 'cocoapi/images/test2014/')
-    annotations_file = os.path.join(cocoapi_loc, 'cocoapi/annotations/image_info_test2014.json')
-    num_workers = 1
+    annotations_file = '/home/peter/datasets/coco/annotations/annotations/captions_train2014.json'
+    num_workers = 4
 
     dataset = CoCoDataset(transform=transform_train,
                           mode=mode,
@@ -36,9 +36,14 @@ def test_coco_dataset():
                           vocab_from_file=vocab_from_file,
                           img_folder=img_folder)
 
-    data_loader = data.DataLoader(dataset=dataset,
-                                  num_workers=num_workers)
 
+    # data loader for COCO dataset.
+    data_loader = data.DataLoader(dataset=dataset,
+                                  num_workers=num_workers
+                                  )
+
+    first_items = dict(list(data_loader.dataset.vocab.word2idx.items())[:10])
+    print(first_items)
 
     print(len(data_loader))
 
