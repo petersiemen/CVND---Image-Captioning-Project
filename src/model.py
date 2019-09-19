@@ -2,7 +2,9 @@ import torch
 import torch.nn as nn
 import torchvision.models as models
 import torch.nn.functional as F
+
 train_on_gpu = torch.cuda.is_available()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class EncoderCNN(nn.Module):
@@ -64,10 +66,10 @@ class DecoderRNN(nn.Module):
 
             out = out.contiguous().view(-1, self.hidden_size)
             out = self.fc(out)
-            tag_scores = F.log_softmax(out, dim=1)
+            #tag_scores = F.log_softmax(out, dim=1)
 
             # build the output tensor
-            outputs[:, t, :] = tag_scores
+            outputs[:, t, :] = out
 
         return outputs
 

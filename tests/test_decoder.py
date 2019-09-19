@@ -10,6 +10,7 @@ def test_decoder():
     hidden_size = 512
     batch_size = 10
     sequence_length = 5
+    lr=0.001
 
     features = np.random.rand(batch_size, embed_size)
     features = torch.from_numpy(features).type(torch.FloatTensor)
@@ -20,19 +21,23 @@ def test_decoder():
     print(captions.shape)
 
     decoder = DecoderRNN(embed_size, hidden_size, vocab_size, 2)
-    loss_function = nn.NLLLoss()
+    criterion = nn.CrossEntropyLoss()
+    params = decoder.parameters()
+    opt = torch.optim.Adam(params, lr=lr)
     print(decoder)
 
     outputs = decoder(features, captions)
     print(outputs)
     print(outputs.shape)
-    #loss = loss_function(outputs, captions)
+    # loss = loss_function(outputs, captions)
     reshaped_output = outputs.view(-1, vocab_size, batch_size)
     reshaped_captions = captions.view(-1, batch_size)
-    loss = loss_function(reshaped_output, reshaped_captions)
+
+    loss = criterion(outputs.view(-1, vocab_size), captions.view(-1))
+
     print(loss)
     loss.backward()
-
+    opt.step()
 
     # unqueeezed = features.unsqueeze(1)
     # print(features.shape)

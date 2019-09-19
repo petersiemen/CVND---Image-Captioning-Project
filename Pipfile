@@ -24,6 +24,7 @@ scikit-image = "*"
 seaborn = "*"
 pycocotools = "*"
 cython = "*"
+requests = "*"
 
 [requires]
 python_version = "3.6"
