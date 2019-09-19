@@ -56,17 +56,18 @@ class DecoderRNN(nn.Module):
 
             # for the first time step the input is the feature vector
             if t == 0:
-                #features_with_mini_batch_dimension = features.view(batch_size, 1, -1)
-                out, (hidden_state, cell_state) = self.lstm(features.view(batch_size, 1, -1), (hidden_state, cell_state))
+                # features_with_mini_batch_dimension = features.view(batch_size, 1, -1)
+                out, (hidden_state, cell_state) = self.lstm(features.view(batch_size, 1, -1),
+                                                            (hidden_state, cell_state))
 
             # for the 2nd+ time step, using teacher forcer
             else:
-                out, (hidden_state, cell_state) = self.lstm(captions_embed[:, t, :].view(batch_size, 1, -1), (hidden_state, cell_state))
-
+                out, (hidden_state, cell_state) = self.lstm(captions_embed[:, t, :].view(batch_size, 1, -1),
+                                                            (hidden_state, cell_state))
 
             out = out.contiguous().view(-1, self.hidden_size)
             out = self.fc(out)
-            #tag_scores = F.log_softmax(out, dim=1)
+            # tag_scores = F.log_softmax(out, dim=1)
 
             # build the output tensor
             outputs[:, t, :] = out
@@ -75,8 +76,24 @@ class DecoderRNN(nn.Module):
 
     def sample(self, inputs, states=None, max_len=20):
         " accepts pre-processed image tensor (inputs) and returns predicted sentence (list of tensor ids of length max_len) "
-        pass
 
+        # list of word indices
+        outputs = []
+
+        hidden_state, cell_state = self.init_hidden(1)
+        next = torch.zeros(1, 1, self.embed_size)
+        for i in range(max_len):
+            if i == 0:
+                next, (hidden_state, cell_state) = self.lstm(inputs, (hidden_state, cell_state))
+            else:
+                next, (hidden_state, cell_state) = self.lstm(next, (hidden_state, cell_state))
+            out = next.contiguous().view(-1, self.hidden_size)
+            out = self.fc(out)
+            word_idx = torch.argmax(out)
+            next = self.embed(torch.tensor([[word_idx]]))
+            outputs.append(word_idx.item())
+
+        return outputs
 
     def init_hidden(self, batch_size):
         '''
