@@ -42,11 +42,10 @@ class DecoderRNN(nn.Module):
         # batch size
         batch_size = features.size(0)
 
-        # TODO to cuda
         hidden_state, cell_state = self.init_hidden(batch_size)
 
         # define the output tensor placeholder
-        outputs = torch.empty((batch_size, captions.size(1), self.vocab_size))
+        outputs = torch.empty((batch_size, captions.size(1), self.vocab_size)).to(device)
 
         # embed the captions
         captions_embed = self.embed(captions)
