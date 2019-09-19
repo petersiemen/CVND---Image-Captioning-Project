@@ -66,7 +66,6 @@ class DecoderRNN(nn.Module):
 
             out = out.contiguous().view(-1, self.hidden_size)
             out = self.fc(out)
-            # tag_scores = F.log_softmax(out, dim=1)
 
             # build the output tensor
             outputs[:, t, :] = out
@@ -89,7 +88,7 @@ class DecoderRNN(nn.Module):
             out = next.contiguous().view(-1, self.hidden_size)
             out = self.fc(out)
             word_idx = torch.argmax(out)
-            next = self.embed(torch.tensor([[word_idx]]))
+            next = self.embed(torch.tensor([[word_idx]]).to(device))
             outputs.append(word_idx.item())
 
         return outputs
