@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
+import torch.nn.functional as F
+train_on_gpu = torch.cuda.is_available()
 
 
 class EncoderCNN(nn.Module):
@@ -22,7 +24,7 @@ class EncoderCNN(nn.Module):
 
 
 class DecoderRNN(nn.Module):
-    def __init__(self, embed_size, hidden_size, vocab_size, num_layers=1, dropout=False, output_size=1024):
+    def __init__(self, embed_size, hidden_size, vocab_size, num_layers=1):
         super(DecoderRNN, self).__init__()
         self.embed_size = embed_size
         self.hidden_size = hidden_size
@@ -30,32 +32,69 @@ class DecoderRNN(nn.Module):
         self.num_layers = num_layers
 
         # define model layers
-        self.embed = nn.Embedding(vocab_size, embed_size)
-        self.lstm = nn.LSTM(embed_size, hidden_size, num_layers,
-                            dropout=dropout, batch_first=True)
-
-        self.fc = nn.Linear(hidden_size, output_size)
-        self.log_softmax = nn.LogSoftmax(dim=1)
+        self.embed = nn.Embedding(num_embeddings=vocab_size, embedding_dim=embed_size)
+        self.lstm = nn.LSTM(input_size=embed_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
+        self.fc = nn.Linear(in_features=hidden_size, out_features=vocab_size)
 
     def forward(self, features, captions):
+        # batch size
         batch_size = features.size(0)
-        # pass input through embedding layer
-        embeds = self.embed(features)
 
-        # get RNN outputs
-        r_out, hidden = self.lstm(embeds, captions)
-        # shape output to be (batch_size*seq_length, hidden_dim)
+        # TODO to cuda
+        hidden_state, cell_state = self.init_hidden(batch_size)
 
-        # Stack up rnn output
-        r_out = r_out.contiguous().view(-1, self.hidden_dim)
+        # define the output tensor placeholder
+        outputs = torch.empty((batch_size, captions.size(1), self.vocab_size))
 
-        # get final output
-        output = self.fc(r_out)
-        output = output.view(batch_size, -1, self.output_size)
-        out = output[:, -1]  # get last batch of labels
-        # return one batch of output word scores and the hidden state
-        return out, hidden
+        # embed the captions
+        captions_embed = self.embed(captions)
+
+        # pass the caption word by word
+        for t in range(captions.size(1)):
+
+            # for the first time step the input is the feature vector
+            if t == 0:
+                #features_with_mini_batch_dimension = features.view(batch_size, 1, -1)
+                out, (hidden_state, cell_state) = self.lstm(features.view(batch_size, 1, -1), (hidden_state, cell_state))
+
+            # for the 2nd+ time step, using teacher forcer
+            else:
+                out, (hidden_state, cell_state) = self.lstm(captions_embed[:, t, :].view(batch_size, 1, -1), (hidden_state, cell_state))
+
+
+            out = out.contiguous().view(-1, self.hidden_size)
+            out = self.fc(out)
+            tag_scores = F.log_softmax(out, dim=1)
+
+            # build the output tensor
+            outputs[:, t, :] = tag_scores
+
+        return outputs
 
     def sample(self, inputs, states=None, max_len=20):
         " accepts pre-processed image tensor (inputs) and returns predicted sentence (list of tensor ids of length max_len) "
         pass
+
+
+    def init_hidden(self, batch_size):
+        '''
+        Initialize the hidden state of an LSTM/GRU
+        :param batch_size: The batch_size of the hidden state
+        :return: hidden state of dims (n_layers, batch_size, hidden_dim)
+        '''
+        # Implement function
+
+        # initialize hidden state with zero weights, and move to GPU if available
+
+        # Create two new tensors with sizes n_layers x batch_size x n_hidden,
+        # initialized to zero, for hidden state and cell state of LSTM
+        weight = next(self.parameters()).data
+
+        if (train_on_gpu):
+            hidden = (weight.new(self.num_layers, batch_size, self.hidden_size).zero_().cuda(),
+                      weight.new(self.num_layers, batch_size, self.hidden_size).zero_().cuda())
+        else:
+            hidden = (weight.new(self.num_layers, batch_size, self.hidden_size).zero_(),
+                      weight.new(self.num_layers, batch_size, self.hidden_size).zero_())
+
+        return hidden
