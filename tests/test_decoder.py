@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from .context import DecoderRNN
+from .context import Vocabulary
 import torch.nn as nn
 
 
@@ -29,9 +30,6 @@ def test_decoder():
     outputs = decoder(features, captions)
     print(outputs)
     print(outputs.shape)
-    # loss = loss_function(outputs, captions)
-    reshaped_output = outputs.view(-1, vocab_size, batch_size)
-    reshaped_captions = captions.view(-1, batch_size)
 
     loss = criterion(outputs.view(-1, vocab_size), captions.view(-1))
 
