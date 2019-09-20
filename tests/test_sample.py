@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import torch
 from .context import DecoderRNN
 from .context import EncoderCNN
+from context import clean_sentence
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 transform_test = transforms.Compose([
@@ -22,21 +23,6 @@ data_loader = get_loader(transform=transform_test,
                          mode='test',
                          cocoapi_loc='/home/peter/datasets/coco-small'  # uncomment for running on local
                          )
-
-
-def clean_sentence(output):
-    start_word = data_loader.dataset.vocab.start_word
-    end_word = data_loader.dataset.vocab.end_word
-    unk_word = data_loader.dataset.vocab.unk_word
-
-    words = []
-    for word_idx in range(len(output)):
-        word = data_loader.dataset.vocab.idx2word.get(word_idx)
-        if word == end_word:
-            break
-        elif word != start_word and word != unk_word:
-            words.append(word)
-    return " ".join(words)
 
 
 def test_sample():

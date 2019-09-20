@@ -16,7 +16,7 @@ def get_val_loader(transform,
     unk_word = "<unk>"
     vocab_from_file = True
     dataset = CoCoDataset(transform=transform,
-                          mode='test',
+                          mode='train',  # to receive image, caption    pairs instead or orig_image, image
                           batch_size=batch_size,
                           vocab_threshold=vocab_threshold,
                           vocab_file=vocab_file,
@@ -27,10 +27,15 @@ def get_val_loader(transform,
                           vocab_from_file=vocab_from_file,
                           img_folder=img_folder)
 
+    indices = dataset.get_train_indices()
+    # Create and assign a batch sampler to retrieve a batch with the sampled indices.
+    initial_sampler = data.sampler.SubsetRandomSampler(indices=indices)
+
     return data.DataLoader(dataset=dataset,
-                           batch_size=dataset.batch_size,
-                           shuffle=True,
-                           num_workers=num_workers)
+                           num_workers=num_workers,
+                           batch_sampler=data.sampler.BatchSampler(sampler=initial_sampler,
+                                                                   batch_size=dataset.batch_size,
+                                                                   drop_last=False))
 
 
 def get_loader(transform,
