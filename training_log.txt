@@ -1,7 +1,5 @@
-Epoch [1/10], Step [1/63], Loss: 6.8927, Perplexity: 985.0488
-Epoch [1/10], Step [2/63], Loss: 6.6614, Perplexity: 781.6339
-Epoch [1/10], Step [3/63], Loss: 6.4298, Perplexity: 620.0230
-Epoch [1/10], Step [4/63], Loss: 6.1009, Perplexity: 446.2725
-Epoch [1/10], Step [5/63], Loss: 5.7250, Perplexity: 306.4189
-Epoch [1/10], Step [6/63], Loss: 5.2988, Perplexity: 200.0981
-Epoch [1/10], Step [7/63], Loss: 4.7733, Perplexity: 118.3092
+Epoch [1/10], Step [1/63], Loss: 9.1836, Perplexity: 9736.1533
+Epoch [1/10], Step [2/63], Loss: 9.1808, Perplexity: 9709.2081
+Epoch [1/10], Step [3/63], Loss: 9.1860, Perplexity: 9759.4682
+Epoch [1/10], Step [4/63], Loss: 9.1796, Perplexity: 9696.8361
+Epoch [1/10], Step [5/63], Loss: 9.1814, Perplexity: 9714.5522
