@@ -1,4 +1,4 @@
-Epoch [1/10], Step [1/63], Loss: 3.6366, Perplexity: 37.9641, Validation-Loss: 0.0000
-Epoch [1/10], Step [2/63], Loss: 3.4779, Perplexity: 32.3918, Validation-Loss: 0.0000
-Epoch [1/10], Step [3/63], Loss: 3.3117, Perplexity: 27.4304, Validation-Loss: 0.0000
-Epoch [1/10], Step [4/63], Loss: 3.0995, Perplexity: 22.1872, Validation-Loss: 0.0000
+Epoch [1/10], Step [1/63], Loss: 6.8988, Perplexity: 991.0501
+Epoch [1/10], Step [2/63], Loss: 6.6566, Perplexity: 777.8763
+Epoch [1/10], Step [3/63], Loss: 6.4000, Perplexity: 601.8382
+Epoch [1/10], Step [4/63], Loss: 6.1793, Perplexity: 482.6516
