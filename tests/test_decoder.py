@@ -24,7 +24,9 @@ def test_decoder():
     decoder = DecoderRNN(embed_size, hidden_size, vocab_size, 2)
     criterion = nn.CrossEntropyLoss()
     params = decoder.parameters()
-    opt = torch.optim.Adam(params, lr=lr)
+
+    opt = torch.optim.SGD(params, lr=lr)
+    #opt = torch.optim.Adam(params, lr=lr)
     print(decoder)
 
     outputs = decoder(features, captions)

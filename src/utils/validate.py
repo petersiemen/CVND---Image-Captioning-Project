@@ -10,12 +10,24 @@ def validate(encoder, decoder, data_loader, criterion, vocab_size):
     encoder.eval()
     decoder.eval()
     losses = []
+    sentence = ''
+    prediction = ''
+    image = ''
     for i, (images, captions) in enumerate(iter(data_loader)):
         features = encoder(images)
         outputs = decoder(features, captions)
         loss = criterion(outputs.view(-1, vocab_size), captions.view(-1))
         losses.append(loss.item())
-    return np.mean(losses)
+
+        if i == 0:
+            image = images[0]
+            caption = captions[0]
+            output = outputs[0]
+            sentence = clean_sentence([i.item() for i in caption], data_loader)
+            output_idx = torch.argmax(output, dim=1)
+            prediction = clean_sentence([i.item() for i in output_idx], data_loader)
+
+    return np.mean(losses), sentence, prediction, image
     # word_idx_output = torch.argmax(outputs, dim=2)
 
     # scores = []
