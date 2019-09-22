@@ -3,7 +3,7 @@ from nltk.tokenize import word_tokenize
 import torch
 from .clean_sentence import clean_sentence
 import numpy as np
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def validate(encoder, decoder, data_loader, criterion, vocab_size):
     # set the networks into validation mode
@@ -14,6 +14,9 @@ def validate(encoder, decoder, data_loader, criterion, vocab_size):
     prediction = ''
     image = ''
     for i, (images, captions) in enumerate(iter(data_loader)):
+        images = images.to(device)
+        captions = captions.to(device)
+
         features = encoder(images)
         outputs = decoder(features, captions)
         loss = criterion(outputs.view(-1, vocab_size), captions.view(-1))
