@@ -54,19 +54,21 @@ class DecoderRNN(nn.Module):
         # embed the captions
         captions_embed = self.embed(captions)
 
+        # use the features from the CNN to predict <start> token
+        out, (hidden_state, cell_state) = self.lstm(features.view(batch_size, 1, -1),
+                                                    (hidden_state, cell_state))
+
+        out = out.contiguous().view(-1, self.hidden_size)
+        out = self.fc(out)
+
+        # build the output tensor
+        outputs[:, 0, :] = out
+
         # pass the caption word by word
-        for t in range(captions.size(1)):
-
-            # for the first time step the input is the feature vector
-            if t == 0:
-                # features_with_mini_batch_dimension = features.view(batch_size, 1, -1)
-                out, (hidden_state, cell_state) = self.lstm(features.view(batch_size, 1, -1),
-                                                            (hidden_state, cell_state))
-
-            # for the 2nd+ time step, using teacher forcer
-            else:
-                out, (hidden_state, cell_state) = self.lstm(captions_embed[:, t, :].view(batch_size, 1, -1),
-                                                            (hidden_state, cell_state))
+        for t in range(1, captions.size(1)):
+            # use teacher forcer to predict all following tokens in the sequences
+            out, (hidden_state, cell_state) = self.lstm(captions_embed[:, t, :].view(batch_size, 1, -1),
+                                                        (hidden_state, cell_state))
 
             out = out.contiguous().view(-1, self.hidden_size)
             out = self.fc(out)
@@ -82,18 +84,21 @@ class DecoderRNN(nn.Module):
         # list of word indices
         outputs = []
 
-        hidden_state, cell_state = self.init_hidden(1)
-        next = torch.zeros(1, 1, self.embed_size)
-        for i in range(max_len):
-            if i == 0:
-                next, (hidden_state, cell_state) = self.lstm(inputs, (hidden_state, cell_state))
-            else:
-                next, (hidden_state, cell_state) = self.lstm(next, (hidden_state, cell_state))
-            out = next.contiguous().view(-1, self.hidden_size)
+        def compute_word_and_append(lstm_out):
+            out = lstm_out.contiguous().view(-1, self.hidden_size)
             out = self.fc(out)
             word_idx = torch.argmax(out)
             next = self.embed(torch.tensor([[word_idx]]).to(device))
             outputs.append(word_idx.item())
+            return next
+
+        hidden_state, cell_state = self.init_hidden(1)
+        lstm_out, (hidden_state, cell_state) = self.lstm(inputs, (hidden_state, cell_state))
+        next = compute_word_and_append(lstm_out)
+
+        for i in range(max_len - 1):
+            lstm_out, (hidden_state, cell_state) = self.lstm(next, (hidden_state, cell_state))
+            next = compute_word_and_append(lstm_out)
 
         return outputs
 
