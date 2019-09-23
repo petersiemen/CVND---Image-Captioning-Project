@@ -72,8 +72,9 @@ class LSTMTagger(nn.Module):
 
         # get the output and hidden state by passing the lstm over our word embeddings
         # the lstm takes in our embeddings and hiddent state
-        lstm_out, self.hidden = self.lstm(
-            embeds.view(len(sentence), 1, -1), self.hidden)
+        with_mini_batch_dim = embeds.view(len(sentence), 1, -1)
+
+        lstm_out, self.hidden = self.lstm(with_mini_batch_dim, self.hidden)
 
         # get the scores for the most likely tag for a word
         tag_outputs = self.hidden2tag(lstm_out.view(len(sentence), -1))
@@ -85,7 +86,7 @@ def test_lstm_tagger():
     # the embedding dimension defines the size of our word vectors
     # for our simple vocabulary and training set, we will keep these small
     EMBEDDING_DIM = 6
-    HIDDEN_DIM = 6
+    HIDDEN_DIM = 4
 
     # instantiate our model
     model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word2idx), len(tag2idx))
