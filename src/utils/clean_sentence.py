@@ -9,6 +9,7 @@ def clean_sentence(output, data_loader):
         word = data_loader.dataset.vocab.idx2word.get(word_idx)
         if word == end_word:
             break
-        elif word != start_word and word != unk_word:
+        # elif word != start_word and word != unk_word:
+        elif word != unk_word:
             words.append(word)
     return " ".join(words)
