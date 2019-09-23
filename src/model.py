@@ -29,7 +29,7 @@ class EncoderCNN(nn.Module):
 
 
 class DecoderRNN(nn.Module):
-    def __init__(self, embed_size, hidden_size, vocab_size, num_layers=1, dropout=0.5):
+    def __init__(self, embed_size, hidden_size, vocab_size, num_layers=1, dropout=0):
         super(DecoderRNN, self).__init__()
         self.embed_size = embed_size
         self.hidden_size = hidden_size
@@ -49,7 +49,7 @@ class DecoderRNN(nn.Module):
         hidden_state, cell_state = self.init_hidden(batch_size)
 
         # define the output tensor placeholder
-        outputs = torch.empty((batch_size, captions.size(1), self.vocab_size)).to(device)
+        outputs = torch.zeros((batch_size, captions.size(1), self.vocab_size)).to(device)
 
         # embed the captions
         captions_embed = self.embed(captions)
