@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision.models as models
 import torch.nn.functional as F
+import numpy as np
 
 train_on_gpu = torch.cuda.is_available()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -54,31 +55,31 @@ class DecoderRNN(nn.Module):
         # embed the captions
         captions_embed = self.embed(captions)
 
-        # use the features from the CNN to predict <start> token
-        out, (hidden_state, cell_state) = self.lstm(features.view(batch_size, 1, -1),
-                                                    (hidden_state, cell_state))
-
-        out = out.contiguous().view(-1, self.hidden_size)
-        out = self.fc(out)
-
-        # build the output tensor
-        outputs[:, 0, :] = out
 
         # pass the caption word by word
         for t in range(1, captions.size(1)):
-            # use teacher forcer to predict all following tokens in the sequences
-            out, (hidden_state, cell_state) = self.lstm(captions_embed[:, t, :].view(batch_size, 1, -1),
-                                                        (hidden_state, cell_state))
+            if t == 1:
+                # use the features from the CNN to predict <start> token
+                out, (hidden_state, cell_state) = self.lstm(features.view(batch_size, 1, -1),
+                                                            (hidden_state, cell_state))
 
-            out = out.contiguous().view(-1, self.hidden_size)
-            out = self.fc(out)
+                out = out.contiguous().view(-1, self.hidden_size)
+                out = self.fc(out)
+
+            else:
+                # use teacher forcer to predict all following tokens in the sequences
+                out, (hidden_state, cell_state) = self.lstm(captions_embed[:, t, :].view(batch_size, 1, -1),
+                                                            (hidden_state, cell_state))
+
+                out = out.contiguous().view(-1, self.hidden_size)
+                out = self.fc(out)
 
             # build the output tensor
             outputs[:, t, :] = out
 
         return outputs
 
-    def sample(self, inputs, states=None, max_len=20):
+    def sample(self, inputs, states=None, max_len=20, top_k=5):
         " accepts pre-processed image tensor (inputs) and returns predicted sentence (list of tensor ids of length max_len) "
 
         # list of word indices
@@ -87,7 +88,15 @@ class DecoderRNN(nn.Module):
         def compute_word_and_append(lstm_out):
             out = lstm_out.contiguous().view(-1, self.hidden_size)
             out = self.fc(out)
-            word_idx = torch.argmax(out)
+
+            p = F.softmax(out, dim=1).data
+            p, top_ch = p.topk(top_k)
+            top_ch = top_ch.numpy().squeeze()
+
+            # select the likely next character with some element of randomness
+            p = p.numpy().squeeze()
+            word_idx = np.random.choice(top_ch, p=p / p.sum())
+
             next = self.embed(torch.tensor([[word_idx]]).to(device))
             outputs.append(word_idx.item())
             return next

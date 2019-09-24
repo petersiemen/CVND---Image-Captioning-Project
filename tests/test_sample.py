@@ -72,4 +72,4 @@ def test_sample():
     assert all([x in data_loader.dataset.vocab.idx2word for x in
                 output]), "Each entry in the output needs to correspond to an integer that indicates a token in the vocabulary."
 
-    print(clean_sentence(output))
+    print(clean_sentence(output, data_loader))
