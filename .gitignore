@@ -7,4 +7,4 @@ annotations/
 .idea
 .venv
 *.iml
-
+vocabl.pkl
