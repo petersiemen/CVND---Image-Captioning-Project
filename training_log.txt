@@ -1,0 +1,4 @@
+Epoch [1/10], Step [1/63], Loss: 5.5236, Perplexity: 250.5406
+Epoch [1/10], Step [2/63], Loss: 5.2751, Perplexity: 195.4043
+Epoch [1/10], Step [3/63], Loss: 5.2823, Perplexity: 196.8151
+Epoch [1/10], Step [4/63], Loss: 5.1207, Perplexity: 167.4528

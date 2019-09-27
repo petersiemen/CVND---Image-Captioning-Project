@@ -52,7 +52,7 @@ def test_train_save_and_sample():
     vocab_size = len(data_loader.dataset.vocab)
 
     # Initialize the encoder and decoder.
-    encoder = EncoderCNN(embed_size)
+    encoder = EncoderCNN(embed_size=hidden_size)
     decoder = DecoderRNN(embed_size, hidden_size, vocab_size)
 
     # Move models to GPU if CUDA is available.

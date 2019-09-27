@@ -150,3 +150,9 @@ def test_embedding():
     #
     # features = np.random.rand(2, embedding_dim)
     #
+
+
+def test_print_orig_resnet():
+    import torchvision.models as models
+    resnet = models.resnet50(pretrained=True)
+    print(resnet)

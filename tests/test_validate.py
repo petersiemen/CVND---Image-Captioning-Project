@@ -1,4 +1,4 @@
-from src.data_loader import get_val_loader
+from src.val_data_loader import val_get_loader
 from src.data_loader import get_loader
 from torchvision import transforms
 from .context import COCO_SMALL
@@ -35,7 +35,7 @@ def test_val_data_loader():
         transforms.Normalize((0.485, 0.456, 0.406),  # normalize image for pre-trained model
                              (0.229, 0.224, 0.225))])
 
-    val_data_loader = get_val_loader(transform=transform_train,
+    val_data_loader = val_get_loader(transform=transform_train,
                                      batch_size=batch_size,
                                      vocab_threshold=vocab_threshold,
                                      annotations_file=annotations_file,
@@ -77,7 +77,7 @@ def test_validate():
         transforms.Normalize((0.485, 0.456, 0.406),  # normalize image for pre-trained model
                              (0.229, 0.224, 0.225))])
 
-    val_data_loader = get_val_loader(transform=transform_train,
+    val_data_loader = val_get_loader(transform=transform_train,
                                      batch_size=batch_size,
                                      vocab_threshold=vocab_threshold,
                                      annotations_file=annotations_file,
@@ -92,7 +92,7 @@ def test_validate():
     vocab_size = len(val_data_loader.dataset.vocab)
 
     # Initialize the encoder and decoder, and set each to inference mode.
-    encoder = EncoderCNN(embed_size)
+    encoder = EncoderCNN(hidden_size)
     decoder = DecoderRNN(embed_size, hidden_size, vocab_size)
 
     # bleu_score, loss = validate(encoder, decoder, val_data_loader, criterion, vocab_size)

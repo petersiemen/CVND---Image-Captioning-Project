@@ -47,7 +47,7 @@ class DecoderRNN(nn.Module):
         # batch size
         batch_size = features.size(0)
 
-        hidden_state, cell_state = self.init_hidden(batch_size)
+        hidden_state, cell_state = self.init_hidden(batch_size, features)
 
         # define the output tensor placeholder
         outputs = torch.zeros((batch_size, captions.size(1), self.vocab_size)).to(device)
@@ -55,63 +55,53 @@ class DecoderRNN(nn.Module):
         # embed the captions
         captions_embed = self.embed(captions)
 
-
         # pass the caption word by word
-        for t in range(1, captions.size(1)):
-            if t == 1:
-                # use the features from the CNN to predict <start> token
-                out, (hidden_state, cell_state) = self.lstm(features.view(batch_size, 1, -1),
-                                                            (hidden_state, cell_state))
-
-                out = out.contiguous().view(-1, self.hidden_size)
-                out = self.fc(out)
-
-            else:
-                # use teacher forcer to predict all following tokens in the sequences
-                out, (hidden_state, cell_state) = self.lstm(captions_embed[:, t, :].view(batch_size, 1, -1),
-                                                            (hidden_state, cell_state))
-
-                out = out.contiguous().view(-1, self.hidden_size)
-                out = self.fc(out)
-
+        for t in range(captions.size(1) - 1):
+            out, (hidden_state, cell_state) = self.lstm(captions_embed[:, t, :].view(batch_size, 1, -1),
+                                                        (hidden_state, cell_state))
+            out = out.contiguous().view(-1, self.hidden_size)
+            out = self.fc(out)
             # build the output tensor
-            outputs[:, t, :] = out
+            outputs[:, t + 1, :] = out
 
         return outputs
 
     def sample(self, inputs, states=None, max_len=20, top_k=5):
         " accepts pre-processed image tensor (inputs) and returns predicted sentence (list of tensor ids of length max_len) "
 
+        batch_size = inputs.size(0)
         # list of word indices
-        outputs = []
+        word_idxs = torch.zeros((batch_size, max_len)).type(torch.LongTensor)
+        outputs = torch.zeros((batch_size, max_len, self.vocab_size)).to(device)
 
-        def compute_word_and_append(lstm_out):
-            out = lstm_out.contiguous().view(-1, self.hidden_size)
-            out = self.fc(out)
-
-            p = F.softmax(out, dim=1).data
+        def sample_word_from_fc_out(fc_out):
+            p = F.softmax(fc_out, dim=1).data
             p, top_ch = p.topk(top_k)
-            top_ch = top_ch.numpy().squeeze()
+            word_idxs_for_batch = torch.zeros(batch_size, dtype=torch.long)
+            for i in range(top_ch.size(0)):
+                top_ch_i = top_ch[i].cpu().numpy().squeeze()
+                # select the likely next character with some element of randomness
+                p_i = p[i].cpu().numpy().squeeze()
+                word_idx = np.random.choice(top_ch_i, p=p_i / p_i.sum())
+                word_idxs_for_batch[i] = int(word_idx)
+            return word_idxs_for_batch
 
-            # select the likely next character with some element of randomness
-            p = p.numpy().squeeze()
-            word_idx = np.random.choice(top_ch, p=p / p.sum())
+        hidden_state, cell_state = self.init_hidden(batch_size, inputs)
 
-            next = self.embed(torch.tensor([[word_idx]]).to(device))
-            outputs.append(word_idx.item())
-            return next
-
-        hidden_state, cell_state = self.init_hidden(1)
-        lstm_out, (hidden_state, cell_state) = self.lstm(inputs, (hidden_state, cell_state))
-        next = compute_word_and_append(lstm_out)
-
+        word_idx_for_batch = torch.zeros((batch_size, 1), dtype=torch.long).to(device)
         for i in range(max_len - 1):
-            lstm_out, (hidden_state, cell_state) = self.lstm(next, (hidden_state, cell_state))
-            next = compute_word_and_append(lstm_out)
+            embedding = self.embed(word_idx_for_batch.to(device))
+            lstm_out, (hidden_state, cell_state) = self.lstm(embedding.view(batch_size, 1, -1),
+                                                             (hidden_state, cell_state))
+            lstm_out = lstm_out.contiguous().view(-1, self.hidden_size)
+            fc_out = self.fc(lstm_out)
+            outputs[:, i, :] = fc_out
+            word_idx_for_batch = sample_word_from_fc_out(fc_out)
+            word_idxs[:, i] = word_idx_for_batch
 
-        return outputs
+        return word_idxs, outputs
 
-    def init_hidden(self, batch_size):
+    def init_hidden(self, batch_size, features):
         '''
         Initialize the hidden state of an LSTM/GRU
         :param batch_size: The batch_size of the hidden state
@@ -126,10 +116,13 @@ class DecoderRNN(nn.Module):
         weight = next(self.parameters()).data
 
         if (train_on_gpu):
-            hidden = (weight.new(self.num_layers, batch_size, self.hidden_size).zero_().cuda(),
-                      weight.new(self.num_layers, batch_size, self.hidden_size).zero_().cuda())
+            hidden_state, cell_state = (weight.new(self.num_layers, batch_size, self.hidden_size).zero_().cuda(),
+                                        weight.new(self.num_layers, batch_size, self.hidden_size).zero_().cuda())
         else:
-            hidden = (weight.new(self.num_layers, batch_size, self.hidden_size).zero_(),
-                      weight.new(self.num_layers, batch_size, self.hidden_size).zero_())
+            hidden_state, cell_state = (weight.new(self.num_layers, batch_size, self.hidden_size).zero_(),
+                                        weight.new(self.num_layers, batch_size, self.hidden_size).zero_())
 
-        return hidden
+        # initialized the first hidden layer with the extracted features from the CNN
+        hidden_state[0, :, :] = features.view(1, batch_size, self.hidden_size)
+        cell_state[0, :, :] = features.view(1, batch_size, self.hidden_size)
+        return hidden_state, cell_state

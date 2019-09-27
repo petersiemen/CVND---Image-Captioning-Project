@@ -6,6 +6,7 @@ from torchvision import transforms
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
+import torch.nn as nn
 from .context import DecoderRNN
 from .context import EncoderCNN
 from context import clean_sentence
@@ -18,11 +19,6 @@ transform_test = transforms.Compose([
     transforms.ToTensor(),  # convert the PIL Image to a tensor
     transforms.Normalize((0.485, 0.456, 0.406),  # normalize image for pre-trained model
                          (0.229, 0.224, 0.225))])
-
-data_loader = get_loader(transform=transform_test,
-                         mode='test',
-                         cocoapi_loc='/home/peter/datasets/coco-small'  # uncomment for running on local
-                         )
 
 
 def test_sample():
@@ -43,33 +39,38 @@ def test_sample():
 
     # Create the data loader.
     data_loader = get_loader(transform=transform_test,
-                             mode='test',
-                             cocoapi_loc='/home/peter/datasets/coco-small'  # uncomment for running on local
+                             batch_size=2,
+                             mode='train',
+                             cocoapi_loc='/home/peter/datasets/coco-small',
+                             vocab_threshold=1,
+                             vocab_from_file=False
                              )
 
+    print(data_loader.dataset.vocab.idx2word)
+    vocab_size = len(data_loader.dataset.vocab.idx2word)
+
     # Obtain sample image before and after pre-processing.
-    orig_image, image = next(iter(data_loader))
+    images, captions = next(iter(data_loader))
 
-    # Visualize sample image, before pre-processing.
-    plt.imshow(np.squeeze(orig_image))
-    plt.title('example image')
-    plt.show()
 
-    encoder = EncoderCNN(embed_size)
+    encoder = EncoderCNN(hidden_size)
     encoder.eval()
     decoder = DecoderRNN(embed_size, hidden_size, vocab_size)
     decoder.eval()
 
     # Obtain the embedded image features.
-    features = encoder(image).unsqueeze(1)
-
+    features = encoder(images)
     # Pass the embedded image features through the model to get a predicted caption.
-    output = decoder.sample(features)
-    print('example output:', output)
+    word_idxs, fc_out = decoder.sample(features, max_len=captions.size(1))
+    print('example output:', word_idxs)
 
-    assert (type(output) == list), "Output needs to be a Python list"
-    assert all([type(x) == int for x in output]), "Output should be a list of integers."
-    assert all([x in data_loader.dataset.vocab.idx2word for x in
-                output]), "Each entry in the output needs to correspond to an integer that indicates a token in the vocabulary."
+    criterion = nn.CrossEntropyLoss()
+    loss = criterion(fc_out.view(-1, vocab_size), captions.view(-1))
 
-    print(clean_sentence(output, data_loader))
+    # assert (type(word_idxs) == list), "Output needs to be a Python list"
+    # assert all([type(x) == int for x in word_idxs]), "Output should be a list of integers."
+    # assert all([x in data_loader.dataset.vocab.idx2word for x in
+    #             word_idxs]), "Each entry in the output needs to correspond to an integer that indicates a token in the vocabulary."
+
+    for word_idx in word_idxs:
+        print(clean_sentence([i.item() for i in word_idx], data_loader))
